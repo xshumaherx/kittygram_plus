@@ -1,8 +1,8 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Cat, Owner
-from .serializers import CatSerializer, OwnerSerializer
+from .serializers import CatSerializer, CatListSerializer, OwnerSerializer
 
 
 class CatViewSet(viewsets.ModelViewSet):
@@ -19,7 +19,29 @@ class CatViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(cats, many=True)
         return Response(serializer.data) 
 
+    def get_serializer_class(self):
+        # Если запрошенное действие (action) — получение списка объектов ('list')
+        if self.action == 'list':
+            # ...то применяем CatListSerializer
+            return CatListSerializer
+        # А если запрошенное действие — не 'list', применяем CatSerializer
+        return CatSerializer 
+
+# Собираем вьюсет, который будет уметь изменять или удалять отдельный объект.
+# А ничего больше он уметь не будет.
+class CreateRetrieveViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
+                            viewsets.GenericViewSet):
+    # В теле класса никакой код не нужен! Пустячок, а приятно.
+    pass
+
+class LightCatViewSet(CreateRetrieveViewSet):
+    queryset = Cat.objects.all()
+    serializer_class = CatSerializer 
+
 
 class OwnerViewSet(viewsets.ModelViewSet):
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer 
+
+
+
